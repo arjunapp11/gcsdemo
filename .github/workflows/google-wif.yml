@@ -29,5 +29,5 @@ jobs:
       uses: 'google-github-actions/auth@v1'
       with:
         token_format: 'access_token'
-        workload_identity_provider:  ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
-        service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+        workload_identity_provider: 'projects/209363497979/locations/global/workloadIdentityPools/github-wif-pool/providers/github-wif-pool-provider'
+        service_account: 'github-account-wfi@github-gcs-workload.iam.gserviceaccount.com'
