@@ -1,0 +1,7 @@
+com\gcpfile\gcpdemo\GcpdemoApplication.class
+com\gcpfile\gcpdemo\entity\FileData.class
+com\gcpfile\gcpdemo\services\FileRepository.class
+com\gcpfile\gcpdemo\controller\ImportFileOnGcpController.class
+com\gcpfile\gcpdemo\test\Demo.class
+com\gcpfile\gcpdemo\services\FileService.class
+com\gcpfile\gcpdemo\services\FileServiceImpl.class
