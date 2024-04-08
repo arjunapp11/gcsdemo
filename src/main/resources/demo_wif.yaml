@@ -1,25 +1,27 @@
-name: List services in GCP
 on:
-  pull_request:
-    branches:
-      - master
-
-permissions:
-  id-token: write
+ push:
+   branches: ["main"]
+   
+env:
+ PROJECT_ID: ${{secrets.PROJECT_ID}}
+ GKE_ZONE: us_centrall-c
 
 jobs:
-  Get_OIDC_ID_token:
-    runs-on: ubuntu-latest
+  job_id:
+    # Add "id-token" with the intended permissions.
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
-    - id: 'auth'
-      name: 'Authenticate to GCP'
-      uses: 'google-github-actions/auth@v0.3.1'
+    - uses: 'actions/checkout@v3'
+
+    - uses: 'google-github-actions/auth@v2'
       with:
-         token_format: 'access_token'
-         workload_identity_provider: ${{ secrets.WORKLOAD_PROVIDER_ID }}
-         service_account: ${{secrets.SECRET_SERVICES}}
+        token_format: 'access_token'
+        workload_identity_provider: ${{ secrets.WORKLOAD_ID}}
+        service_account: ${{ secrets.SERVICES_ACC}}
     - id: 'gcloud'
       name: List Instances
       run: |-
-        gcloud auth login --brief --cred-file="${{ steps.auth.outputs.credentials_file_path }}"
-        gcloud services list
+        gcloud compute instances list --project $PROJECT_ID -- zone $GKE_ZONE
