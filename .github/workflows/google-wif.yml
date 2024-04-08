@@ -31,10 +31,3 @@ jobs:
         token_format: 'access_token'
         workload_identity_provider:  ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
         service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
-      run: |-
-        kubectl kustomize code-samples/6-multiple-envs/day2/dev/ > deploy.yml
-        echo "Kustomize output:"
-        cat deploy.yml
-        
-        kubectl apply -f deploy.yml
-        kubectl get services -n $ENVIRONMENT -o wide
