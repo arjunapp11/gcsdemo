@@ -1,95 +1,57 @@
-# This workflow will deploy source code on Cloud Run when a commit is pushed to the "main" branch
-#
-# Overview:
-#
-# 1. Authenticate to Google Cloud
-# 2. Deploy it to Cloud Run
-#
-# To configure this workflow:
-#
-# 1. Ensure the required Google Cloud APIs are enabled:
-#
-#    Cloud Run            run.googleapis.com
-#    Cloud Build          cloudbuild.googleapis.com
-#    Artifact Registry    artifactregistry.googleapis.com
-#
-# 2. Create and configure Workload Identity Federation for GitHub (https://github.com/google-github-actions/auth#setting-up-workload-identity-federation)
-#
-# 3. Ensure the required IAM permissions are granted
-#
-#    Cloud Run
-#      roles/run.admin
-#      roles/iam.serviceAccountUser     (to act as the Cloud Run runtime service account)
-#
-#    Cloud Build
-#      roles/cloudbuild.builds.editor
-#
-#    Cloud Storage
-#      roles/storage.objectAdmin
-#
-#    Artifact Registry
-#      roles/artifactregistry.admin     (project or repository level)
-#
-#    NOTE: You should always follow the principle of least privilege when assigning IAM roles
-#
-# 4. Create GitHub secrets for WIF_PROVIDER and WIF_SERVICE_ACCOUNT
-#
-# 5. Change the values for the SERVICE and REGION environment variables (below).
-#
-# For more support on how to run this workflow, please visit https://github.com/marketplace/actions/deploy-to-cloud-run
-#
-# Further reading:
-#   Cloud Run runtime service account   - https://cloud.google.com/run/docs/securing/service-identity
-#   Cloud Run IAM permissions           - https://cloud.google.com/run/docs/deploying-source-code#permissions_required_to_deploy
-#   Cloud Run builds from source        - https://cloud.google.com/run/docs/deploying-source-code
-#   Principle of least privilege        - https://cloud.google.com/blog/products/identity-security/dont-get-pwned-practicing-the-principle-of-least-privilege
-
-name: Deploy to Cloud Run from Source
+name: Prepare Manifests and Deploy to GKE
 
 on:
   push:
     branches: [ "main" ]
 
 env:
-  PROJECT_ID: YOUR_PROJECT_ID # TODO: update Google Cloud project id
-  SERVICE: YOUR_SERVICE_NAME # TODO: update Cloud Run service name
-  REGION: YOUR_SERVICE_REGION # TODO: update Cloud Run service region
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: kustomize-demo-cluster 
+  GKE_ZONE: us-central1-c
+  ENVIRONMENT: dev
 
 jobs:
-  deploy:
-    # Add 'id-token' with the intended permissions for workload identity federation
+  setup-prepare-manifests-deploy:
+    name: Setup, Prepare, and Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
     permissions:
       contents: 'read'
       id-token: 'write'
 
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+    - name: Checkout
+      uses: actions/checkout@v3
 
-      - name: Google Auth
-        id: auth
-        uses: 'google-github-actions/auth@v0'
-        with:
-          workload_identity_provider: '${{ secrets.WIF_PROVIDER }}' # e.g. - projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider
-          service_account: '${{ secrets.WIF_SERVICE_ACCOUNT }}' # e.g. - my-service-account@my-project.iam.gserviceaccount.com
+    # Configure Workload Identity Federation and generate an access token.
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v1'
+      with:
+        token_format: 'access_token'
+        workload_identity_provider:  ${{ secrets.WORKLOAD_IDENTITY_PROVIDER_ID }}
+        service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-      # NOTE: Alternative option - authentication via credentials json
-      # - name: Google Auth
-      #   id: auth
-      #   uses: 'google-github-actions/auth@v0'
-      #   with:
-      #     credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+    # Get the GKE credentials so we can deploy to the cluster
+    - name: Set up GKE credentials
+      uses: google-github-actions/get-gke-credentials@v0
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GKE_ZONE }}
 
-      - name: Deploy to Cloud Run
-        id: deploy
-        uses: google-github-actions/deploy-cloudrun@v0
-        with:
-          service: ${{ env.SERVICE }}
-          region: ${{ env.REGION }}
-          # NOTE: If required, update to the appropriate source folder
-          source: ./
+    # Download and setup latest kubectl version 
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
 
-      # If required, use the Cloud Run url output in later steps
-      - name: Show Output
-        run: echo ${{ steps.deploy.outputs.url }}
+    # Deploy to the GKE cluster
+    - name: Deploy to GKE
+      run: |-
+        kubectl kustomize code-samples/6-multiple-envs/day2/dev/ > deploy.yml
+        echo "Kustomize output:"
+        cat deploy.yml
+        
+        kubectl apply -f deploy.yml
+        kubectl get services -n $ENVIRONMENT -o wide
