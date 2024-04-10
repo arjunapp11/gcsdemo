@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
 
 env:
-  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  PROJECT_ID: ${{ secrets.GKE_PROJECTSS }}
   GKE_ZONE: us-central1-c
   ENVIRONMENT: dev
 
@@ -29,5 +29,5 @@ jobs:
       uses: 'google-github-actions/auth@v1'
       with:
         #token_format: 'access_token'
-        workload_identity_provider: 'projects/568856489713/locations/global/workloadIdentityPools/pool-workload/providers/pool-workload-provider'
-        service_account: 'services-account@my-project-wif.iam.gserviceaccount.com'
+        workload_identity_provider: 'projects/568856489713/locations/global/workloadIdentityPools/pool-workload/providers/pool-workload-providerSS'
+        service_account: 'services-account@my-project-wif.iam.gserviceaccount.comSS'
