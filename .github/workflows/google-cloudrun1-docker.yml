@@ -1,5 +1,5 @@
 
-name: Build and Deploy to Cloud
+name: Build and Deploy to Cloud run
 on:
   push:
    branches: [ "main" ]
