@@ -1,4 +1,4 @@
-FROM openjdk:17
-WORKDIR /app
-COPY target/spring-boot-gcp-0.0.1-SNAPSHOT.jar spring-boot-gcp-0.0.1-SNAPSHOT.jar
-ENTRYPOINT ["java", "-jar", "spring-boot-gcp-0.0.1-SNAPSHOT.jar"]
+FROM openjdk:8-jdk
+VOLUME /tmp
+ADD target/spannerdemo-0.0.1-SNAPSHOT.jar app.jar
+ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
